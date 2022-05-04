@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS user
     family         TEXT   ,
     email          TEXT   ,
     image          TEXT   ,
+    status         ENUM("Blocked","Created","Hidden","Completed"),
     created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE IF NOT EXISTS user_token
