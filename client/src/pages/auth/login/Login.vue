@@ -60,7 +60,12 @@ export default {
         "login_credentials": this.password,
       }).then((data) => {
         console.log(data);
+        if (data.data == "Now you are logged in") {
+          this.$router.push({ name:"dashboard"});
+        }
+        else{
         this.passwordErrors.push(data.data);
+        }
       })
       if (!this.formReady) {
         return

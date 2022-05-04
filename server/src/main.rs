@@ -1,12 +1,9 @@
-use hyper::body::Buf;
 use hyper::client::HttpConnector;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{header, Body, Client, Method, Request, Response, Server, StatusCode};
 use jwt_simple::prelude::*;
 use serde::{Deserialize, Serialize};
-use sha_crypt::{sha512_check, sha512_simple, Sha512Params};
 use sqlx::mysql::MySqlPool;
-use sqlx::Row;
 use sqlx::{MySql, Pool};
 use std::collections::HashMap;
 use std::env;
@@ -17,7 +14,7 @@ type JsonMap = HashMap<String, serde_json::Value>;
 type GenericError = Box<dyn std::error::Error + Send + Sync>;
 type Result<T> = std::result::Result<T, GenericError>;
 mod login;
-
+mod signup;
 static INDEX: &[u8] = b"<a href=\"test.html\">test.html</a>";
 static NOTFOUND: &[u8] = b"Some Thing is Wrong";
 static INTERNAL_SERVER_ERROR: &[u8] = b"Internal Server Error";
@@ -49,7 +46,7 @@ async fn login(
         // .header(header::CONTENT_TYPE, "application/json")
         .header("Access-Control-Allow-Origin", "*")
         .header("Access-Control-Allow-Methods", "*")
-        .header("Access-Control-Allow-Credentials","true")
+        .header("Access-Control-Allow-Credentials", "true")
         .header(header::CONTENT_TYPE, "application/json")
         .status(status)
         .body(Body::from(message))
@@ -90,17 +87,13 @@ async fn signup(
     req: Request<Body>,
     mut pool: sqlx::pool::PoolConnection<sqlx::mysql::MySql>,
 ) -> Result<Response<Body>> {
-    // rounds = 10_000
-    let params = Sha512Params::new(10_000).expect("RandomError!");
+    let (message, status) = crate::signup::signup_proccess(req, pool).await;
 
-    // Hash the password for storage
-    let hashed_password =
-        sha512_simple("Not so secure password", &params).expect("Should not fail");
-
-    let (message, status) = ("not impl", 200);
     Ok(Response::builder()
-    .header("Access-Control-Allow-Origin", "*")
+        // .header(header::CONTENT_TYPE, "application/json")
+        .header("Access-Control-Allow-Origin", "*")
         .header("Access-Control-Allow-Methods", "*")
+        .header("Access-Control-Allow-Credentials", "true")
         .header(header::CONTENT_TYPE, "application/json")
         .status(status)
         .body(Body::from(message))
@@ -111,7 +104,7 @@ use std::sync::{Arc, Mutex};
 async fn response_examples(
     req: Request<Body>,
     client: Client<HttpConnector>,
-    pool: Pool<MySql>,
+    pool: PoolConnection<MySql>,
     time_req: Arc<Mutex<u128>>,
 ) -> Result<Response<Body>> {
     println!(" urll is {} ", req.uri());
@@ -126,8 +119,8 @@ async fn response_examples(
         (&Method::POST, "/api/login") => match pool.acquire().await {
             Ok(db_con) => login(req, db_con).await,
             _ => Ok(Response::builder()
-            .header("Access-Control-Allow-Origin", "*")
-        .header("Access-Control-Allow-Methods", "*")
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Methods", "*")
                 .status(StatusCode::from_u16(500).unwrap())
                 .body(NOTFOUND.into())
                 .unwrap()),
@@ -144,9 +137,9 @@ async fn response_examples(
         _ => {
             // Return 404 not found response.
             Ok(Response::builder()
-            .header("Access-Control-Allow-Origin", "*")
-        .header("Access-Control-Allow-Methods", "*")
-        .header("Access-Control-Allow-Headers","*")
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Methods", "*")
+                .header("Access-Control-Allow-Headers", "*")
                 .status(200)
                 .body(NOTFOUND.into())
                 .unwrap())
@@ -157,7 +150,6 @@ async fn response_examples(
 extern crate dotenv;
 
 use dotenv::dotenv;
-use sqlx::pool::PoolConnection;
 // Read migrations from a local folder: ./migrations
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -210,7 +202,7 @@ async fn main() -> Result<()> {
     let new_service = make_service_fn(move |_| {
         // Move a clone of `client` into the `service_fn`.
         let client = client.clone();
-        let pooll = pool.clone();
+        let pooll = pool.clone().acquire().await.unwrap();
         let req_to_divar = time_for_send.clone();
         async {
             Ok::<_, GenericError>(service_fn(move |req| {

@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS user
 (
     id             BIGINT UNSIGNED PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    username       TEXT    NOT NULL UNIQUE,
+    username       TEXT    NOT NULL UNIQUE, 
     password       TEXT    NOT NULL,
     fullname       TEXT   ,
     family         TEXT   ,

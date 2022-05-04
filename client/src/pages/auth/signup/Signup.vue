@@ -44,6 +44,7 @@
 </template>
 
 <script>
+import axios from 'axios';
 export default {
   name: 'signup',
   data () {
@@ -64,7 +65,19 @@ export default {
       if (!this.formReady) {
         return
       }
-      this.$router.push({ name: 'dashboard' })
+      axios.post("http://localhost:8000/api/signup",
+      {
+        "username": this.email,
+        "password": this.password,
+      }).then((data) => {
+        console.log(data);
+        if (data.data == "Success") {
+          this.$router.push({ name:"login"});
+        }
+        else{
+        }
+        this.passwordErrors.push(data.data);
+      })
     },
   },
   computed: {

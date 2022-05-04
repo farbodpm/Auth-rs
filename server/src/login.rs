@@ -1,7 +1,5 @@
 use hyper::body::Buf;
-use hyper::client::HttpConnector;
 use hyper::{header, Body, Method, Request, Response, Server, StatusCode};
-use jwt_simple::prelude::*;
 use serde::{Deserialize, Serialize};
 use sha_crypt::{sha512_check, sha512_simple, Sha512Params};
 use sqlx::mysql::MySqlPool;
@@ -14,14 +12,14 @@ use std::env;
 type GenericError = Box<dyn std::error::Error + Send + Sync>;
 type Result<T> = std::result::Result<T, GenericError>;
 
-#[derive(Serialize, Deserialize,Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 
 pub enum LoginType {
     Username,
     PhoneStep1,
     PhoneStep2,
 }
-#[derive(Serialize, Deserialize,Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct LoginRequest {
     pub login_type: LoginType,
     pub login_input: String,
@@ -29,7 +27,22 @@ pub struct LoginRequest {
 }
 
 pub fn validate_username(username: &str) -> bool {
-    if username.len() > 7 {
+    let mut res = true;
+    if username.len() == 9 {
+        for c in username.chars() {
+            if !c.is_numeric() {
+                res = false;
+                break;
+            }
+        }
+    } else {
+        res = false;
+    }
+    res
+}
+
+pub fn validate_password(password: &str) -> bool {
+    if password.len() > 7 {
         return true;
     }
     false
@@ -115,7 +128,7 @@ async fn test_login_signup_request() {
     let pool = MySqlPool::connect(&database_url[..]).await.unwrap();
     let request_json = LoginRequest {
         login_type: LoginType::Username,
-        login_input: String::from("farbodpm"),
+        login_input: String::from("132147966"),
         login_credentials: String::from("12345678"),
     };
     let request_budy = serde_json::to_string(&request_json).unwrap();
@@ -134,16 +147,16 @@ async fn test_login_correct_request() {
     // Hash the password for storage
     let hashed_password = sha512_simple("12345678", &params).expect("Should not fail");
     println!("{:?}", hashed_password);
-    sqlx::query("INSERT INTO user(username, password, email ) VALUES(\"farbodpm\", ? , \"farbod@gmail.com\");").bind(hashed_password).execute(&pool).await.unwrap();
+    sqlx::query("INSERT INTO user(username, password, email ) VALUES(\"132147966\", ? , \"farbod@gmail.com\");").bind(hashed_password).execute(&pool).await.unwrap();
     let request_json = LoginRequest {
         login_type: LoginType::Username,
-        login_input: String::from("farbodpm"),
+        login_input: String::from("132147966"),
         login_credentials: String::from("12345678"),
     };
     let request_budy = serde_json::to_string(&request_json).unwrap();
     let req = Request::new(Body::from(request_budy));
     let (message, status) = login_proccess(req, pool.acquire().await.unwrap()).await;
-    sqlx::query("DELETE from user where username='farbodpm' ;")
+    sqlx::query("DELETE from user where username='132147966' ;")
         .execute(&pool)
         .await
         .unwrap();
@@ -159,16 +172,16 @@ async fn test_login_correct_request() {
     // Hash the password for storage
     let hashed_password = sha512_simple("87654321", &params).expect("Should not fail");
     println!("{:?}", hashed_password);
-    sqlx::query("INSERT INTO user(username, password, email ) VALUES(\"farbodpm\", ? , \"farbod@gmail.com\");").bind(hashed_password).execute(&pool).await.unwrap();
+    sqlx::query("INSERT INTO user(username, password, email ) VALUES(\"132147966\", ? , \"farbod@gmail.com\");").bind(hashed_password).execute(&pool).await.unwrap();
     let request_json = LoginRequest {
         login_type: LoginType::Username,
-        login_input: String::from("farbodpm"),
+        login_input: String::from("132147966"),
         login_credentials: String::from("12345678"),
     };
     let request_budy = serde_json::to_string(&request_json).unwrap();
     let req = Request::new(Body::from(request_budy));
     let (message, status) = login_proccess(req, pool.acquire().await.unwrap()).await;
-    sqlx::query("DELETE from user where username='farbodpm' ;")
+    sqlx::query("DELETE from user where username='132147966' ;")
         .execute(&pool)
         .await
         .unwrap();
