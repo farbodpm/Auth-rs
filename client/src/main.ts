@@ -7,7 +7,7 @@ import './registerServiceWorker'
 import router from './router'
 import store from './store'
 import vuesticGlobalConfig from './services/vuestic-ui/global-config'
-import axios from 'axios';
+
 
 const i18nConfig = {
   locale: 'en',

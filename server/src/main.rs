@@ -104,7 +104,7 @@ use std::sync::{Arc, Mutex};
 async fn response_examples(
     req: Request<Body>,
     client: Client<HttpConnector>,
-    pool: PoolConnection<MySql>,
+    pool: Pool<MySql>,
     time_req: Arc<Mutex<u128>>,
 ) -> Result<Response<Body>> {
     println!(" urll is {} ", req.uri());
@@ -202,7 +202,7 @@ async fn main() -> Result<()> {
     let new_service = make_service_fn(move |_| {
         // Move a clone of `client` into the `service_fn`.
         let client = client.clone();
-        let pooll = pool.clone().acquire().await.unwrap();
+        let pooll = pool.clone();
         let req_to_divar = time_for_send.clone();
         async {
             Ok::<_, GenericError>(service_fn(move |req| {

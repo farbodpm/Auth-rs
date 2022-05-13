@@ -17,6 +17,8 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   name: 'recover-password',
   data () {
@@ -30,7 +32,15 @@ export default {
       if (!this.email) {
         this.emailErrors = ['Email is required']
       } else {
-        this.$router.push('/')
+        axios.post("http://localhost:8000/api/signup",
+      {
+        "login_type": "Username",
+        "login_input": this.email,
+        "login_credentials": this.password,
+      }).then((data) => {
+        console.log(data);
+        this.passwordErrors.push(data.data);
+      })
       }
     },
   },
