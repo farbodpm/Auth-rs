@@ -31,6 +31,7 @@ pub struct LoginRequest {
 pub struct LoginResponse {
     pub message: String,
     pub token: String,
+    pub name : String
 }
 #[derive(Serialize, Deserialize)]
 pub struct MyAdditionalData {
@@ -78,7 +79,7 @@ pub async fn login_proccess(
             match data.login_type {
                 LoginType::Username => {
                     match sqlx::query!(
-                        "SELECT id,password FROM user WHERE username=?;",
+                        "SELECT id,password , username FROM user WHERE username=?;",
                         data.login_input
                     )
                     .fetch_all(&mut pool)
@@ -91,6 +92,7 @@ pub async fn login_proccess(
                                     let mut response = LoginResponse{
                                         message: String::from("Please Sign up"),
                                         token: String::from(""),
+                                        name : String::from(""),
                                     };
                                     
                                     (serde_json::to_string(&response).unwrap(), 200)
@@ -109,6 +111,7 @@ pub async fn login_proccess(
                                             let mut response = LoginResponse{
                                                 message: String::from("Now you are logged in"),
                                                 token: String::from(token),
+                                                name : String::from(&database[0].username)
                                             };
                                             let resp_str = serde_json::to_string(&response).unwrap();
                                             (resp_str, 200)

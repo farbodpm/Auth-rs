@@ -68,7 +68,9 @@ async fn logout(
         .unwrap())
 }
 
-async fn get_user(req: Request<Body>) -> Result<Response<Body>> {
+async fn get_user(req: Request<Body>,
+    mut pool: sqlx::pool::PoolConnection<sqlx::mysql::MySql>,
+) -> Result<Response<Body>> {
     let (message, status) = ("not impl", 200);
 
     Ok(Response::builder()
@@ -232,7 +234,15 @@ async fn response_examples(
                 .body(NOTFOUND.into())
                 .unwrap()),
         },
-        (&Method::POST, "/api/get/user") => get_user(req).await,
+        (&Method::POST, "/api/user/list") => match pool.acquire().await {
+            Ok(db_con) => get_user(req, db_con).await,
+            _ => Ok(Response::builder()
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Methods", "*")
+                .status(StatusCode::from_u16(500).unwrap())
+                .body(NOTFOUND.into())
+                .unwrap()),
+        },
         (&Method::POST, "/api/company/create") => match pool.acquire().await {
             Ok(db_con) => create_company(req, db_con).await,
             _ => Ok(Response::builder()
@@ -242,7 +252,7 @@ async fn response_examples(
                 .body(NOTFOUND.into())
                 .unwrap()),
         },
-        (&Method::POST, "/api/company/edit") => get_user(req).await,
+        // (&Method::POST, "/api/company/edit") => get_user(req).await,
         (&Method::POST, "/api/company/list") => match pool.acquire().await {
             Ok(db_con) => get_companis(req, db_con).await,
             _ => Ok(Response::builder()
@@ -252,7 +262,7 @@ async fn response_examples(
                 .body(NOTFOUND.into())
                 .unwrap()),
         },
-        (&Method::POST, "/api/company/assign") => get_user(req).await,
+        // (&Method::POST, "/api/company/assign") => get_user(req).await,
         (&Method::POST, "/api/wallet/get") => 
             match pool.acquire().await {
             Ok(db_con) => get_wallet(req, db_con).await,

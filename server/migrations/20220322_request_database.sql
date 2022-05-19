@@ -1,13 +1,21 @@
 CREATE TABLE IF NOT EXISTS user
 (
     id             BIGINT UNSIGNED PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    username       TEXT    NOT NULL UNIQUE, 
+    username       TEXT    NOT NULL , 
     password       TEXT    NOT NULL,
     fullname       TEXT   ,
     family         TEXT   ,
     email          TEXT   ,
     image          TEXT   ,
     status         ENUM("Blocked","Created","Hidden","Completed"),
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS user_attr
+(
+    id             BIGINT UNSIGNED PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    user_id       TEXT    NOT NULL , 
+    type       TEXT    NOT NULL,
+    value       TEXT    NOT NULL,
     created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE IF NOT EXISTS user_company
@@ -20,7 +28,7 @@ CREATE TABLE IF NOT EXISTS user_company
 CREATE TABLE IF NOT EXISTS company
 (
     id          BIGINT UNSIGNED PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    name        TEXT NOT NULL UNIQUE, 
+    name        TEXT NOT NULL , 
     address     TEXT NOT NULL,
     lat         TEXT   ,
     lng         TEXT   ,
