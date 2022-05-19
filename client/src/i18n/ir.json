@@ -1,16 +1,27 @@
 {
+  "profile" : {
+    "name" : "نام",
+    "sex" : "جنسیت",
+    "age" : "سن",
+    "profilePic" : "عکس پروفایل"
+  },
+  "addCompany" : {
+    "name" : "نام",
+    "address" : "جنسیت",
+    "add" : "اضافه کردن"
+  },
   "auth": {
     "agree": "با شرایط استفاده موافقم.",
     "createAccount": "ساخت حساب کاربری",
-    "createNewAccount": "ساخت حساب کاربری تازه",
-    "email": "رایانامه",
+    "createNewAccount": "ساخت حساب کاربری",
+    "email": "شماره تلفن یا ایمیل",
     "login": "ورود",
     "password": "گذرواژه",
     "recover_password": "فراموشی رمز عبور",
     "sign_up": "ساخت حساب کاربری",
     "keep_logged_in": "مرا در این مرورگر بخاطر بسپار",
     "termsOfUse": "شرایط استفاده",
-    "reset_password": "بازنشانی گذرواژه"
+    "reset_password": " تغییر رمز"
   },
   "404": {
     "title": "این صفحه رفته گل بچینه :)",
@@ -281,7 +292,10 @@
     "persian": "فارسی"
   },
   "menu": {
+    "companies" : "باشگاه ها",
+    "finance": "امور مالی",
     "auth": "Auth",
+    "reports": "گزارشات",
     "rating": "رتبه بندی",
     "buttons": "دکمه ها",
     "charts": "نمودار ها",
@@ -381,8 +395,8 @@
     "badges": "نشان ها"
   },
   "navbar": {
-    "messageUs": "سوالات مربوط به این افزونه را ما بپرسید",
-    "repository": "مخزن گیت هاب"
+    "messageUs": "کیف پول شما",
+    "repository": "گیت هاب"
   },
   "notifications": {
     "all": "همه اعلان ها را نشان بده",
@@ -440,13 +454,14 @@
     "noReport": "هیچ داده ای برای نمایش وجود ندارد. گزارش داده های موجود تا این تاریخ.",
     "loading": "در حال بارگزاری",
     "headings": {
+      "address" : "آدرس",
       "email": "رایانما",
       "name": "نام کامل",
       "firstName": "نام",
       "lastName": "نام خانوادگی",
       "status": "وضعیت",
       "country": "کشور",
-      "location": "مکان"
+      "phone" :"شماره تلفن"
     }
   },
   "user": {

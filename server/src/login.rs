@@ -4,13 +4,14 @@ use serde::{Deserialize, Serialize};
 use sha_crypt::{sha512_check, sha512_simple, Sha512Params};
 use sqlx::mysql::MySqlPool;
 use sqlx::Row;
-use sqlx::{MySql, Pool};
 use std::collections::HashMap;
-use tokio_postgres::{Error, NoTls};
-type JsonMap = HashMap<String, serde_json::Value>;
+use jwt_simple::prelude::HS256Key;
+use jwt_simple::prelude::Claims;
+use jwt_simple::prelude::*;
 use std::env;
-type GenericError = Box<dyn std::error::Error + Send + Sync>;
-type Result<T> = std::result::Result<T, GenericError>;
+
+pub const KEY : [u8; 32] = [98, 46, 158, 67, 91, 230, 115, 47, 193, 232, 204, 147, 231, 64, 33, 83, 57, 89, 76, 11, 125, 127, 187, 210, 59, 20, 4, 167, 245, 218, 222, 
+51];
 
 #[derive(Serialize, Deserialize, Debug)]
 
@@ -26,6 +27,16 @@ pub struct LoginRequest {
     pub login_credentials: String,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct LoginResponse {
+    pub message: String,
+    pub token: String,
+}
+#[derive(Serialize, Deserialize)]
+pub struct MyAdditionalData {
+   pub user_id: u64,
+//    companies: Vec<u64>,
+}
 pub fn validate_username(username: &str) -> bool {
     let mut res = true;
     if username.len() == 9 {
@@ -48,24 +59,26 @@ pub fn validate_password(password: &str) -> bool {
     false
 }
 
-pub async fn login_proccess<'a>(
+pub async fn login_proccess(
     req: Request<Body>,
     mut pool: sqlx::pool::PoolConnection<sqlx::mysql::MySql>,
-) -> (&'a str, u16) {
+) -> (String, u16) {
     // Aggregate the body...
     let whole_body = hyper::body::aggregate(req).await.unwrap();
     // Decode as JSON ...
     let mut data: Option<LoginRequest> = match serde_json::from_reader(whole_body.reader()) {
         Ok(data) => Some(data),
+      
         _ => None,
     };
+    
     println!("data req is : {:?}", data);
     match data {
         Some(data) => {
             match data.login_type {
                 LoginType::Username => {
                     match sqlx::query!(
-                        "SELECT password FROM user WHERE username=?;",
+                        "SELECT id,password FROM user WHERE username=?;",
                         data.login_input
                     )
                     .fetch_all(&mut pool)
@@ -75,32 +88,64 @@ pub async fn login_proccess<'a>(
                             // Check username validation...
                             if validate_username(&data.login_input) {
                                 if database.len() < 1 {
-                                    ("Please Sign up", 200)
+                                    let mut response = LoginResponse{
+                                        message: String::from("Please Sign up"),
+                                        token: String::from(""),
+                                    };
+                                    
+                                    (serde_json::to_string(&response).unwrap(), 200)
                                 } else {
                                     // Verifying a stored password
                                     match sha512_check(
                                         &data.login_credentials,
                                         &database[0].password[..],
                                     ) {
-                                        Ok(_) => ("Now you are logged in", 200),
-                                        _ => ("Wrong password", 200),
+                                        Ok(_) => {
+                                            let my_additional_data = MyAdditionalData{user_id : database[0].id};
+                                            let claims = Claims::with_custom_claims(my_additional_data, Duration::from_mins(180));
+                                            let key = HS256Key::from_bytes(&KEY);
+                                            let token = key.authenticate(claims).unwrap();
+
+                                            let mut response = LoginResponse{
+                                                message: String::from("Now you are logged in"),
+                                                token: String::from(token),
+                                            };
+                                            let resp_str = serde_json::to_string(&response).unwrap();
+                                            (resp_str, 200)
+                                            //todo add hash code in token
+                                            },
+                                        _ => (String::from("Wrong password"), 200),
                                     }
                                     // ("Wrong password", 200)
                                 }
                             } else {
-                                ("Invalid username", 200)
+                                (String::from("Invalid username"), 200)
                             }
                         }
-                        _ => ("internal Error", 500),
+                        _ => (String::from("internal Error"), 500),
                     }
                 }
-                _ => ("internal Error", 500),
+                _ => (String::from("internal Error"), 500),
             }
         }
-        None => ("Invalid Input", 500),
+        None => (String::from("Invalid Input"), 500),
     }
 }
 #[cfg(test)]
+#[test]
+fn test_jwt(){
+    let my_additional_data = MyAdditionalData{user_id : 1};
+    let claims = Claims::with_custom_claims(my_additional_data, Duration::from_mins(180));
+    let key = HS256Key::from_bytes(&KEY);
+    let token = key.authenticate(claims).unwrap();
+    let claims = key.verify_token::<MyAdditionalData>(&token, None);
+    match claims {
+        Ok(my_data) =>{
+        } ,
+        Err(e)=> panic!("token is {:?} , Error {}",token,e)
+    };
+
+}
 #[test]
 fn test_hash() {
     // rounds = 10_000
@@ -135,7 +180,7 @@ async fn test_login_signup_request() {
     let req = Request::new(Body::from(request_budy));
     let (message, status) = login_proccess(req, pool.acquire().await.unwrap()).await;
     assert_eq!(status, 200);
-    assert_eq!(message, "Please Sign up");
+    assert_eq!(message, String::from("Please Sign up"));
 }
 #[tokio::test]
 async fn test_login_correct_request() {
@@ -162,7 +207,8 @@ async fn test_login_correct_request() {
         .unwrap();
 
     assert_eq!(status, 200);
-    assert_eq!(message, "Now you are logged in");
+    let msg : LoginResponse = serde_json::from_str(&message).unwrap();
+    assert_eq!(msg.message, "Now you are logged in");
 
     let database_url = env::var("DATABASE_URL").unwrap();
     let pool = MySqlPool::connect(&database_url[..]).await.unwrap();

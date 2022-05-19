@@ -65,7 +65,9 @@ export default {
       if (!this.formReady) {
         return
       }
-      axios.post("http://localhost:8000/api/signup",
+      const BASE_URL = process.env.APP_BASE_URL;
+
+      axios.post(BASE_URL + "/api/signup",
       {
         "username": this.email,
         "password": this.password,

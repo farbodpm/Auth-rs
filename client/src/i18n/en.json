@@ -1,4 +1,15 @@
 {
+  "profile" : {
+    "name" : "Name",
+    "sex" : "Sex",
+    "age" : "Age",
+    "profilePic" : "Profile Pic"
+  },
+  "addCompany" : {
+    "name" : "Name",
+    "address" : "Addr",
+    "add" : "Add"
+  },
   "auth": {
     "agree": "I agree to",
     "createAccount": "Create account",
@@ -287,6 +298,9 @@
     "persian": "Persian"
   },
   "menu": {
+    "companies" : "Companies",
+    "finance" : "Finance",
+    "reports" : "Reports",
     "auth": "Auth",
     "rating": "Rating",
     "buttons": "Buttons",
@@ -415,8 +429,8 @@
     }
   },
   "navbar": {
-    "messageUs": "Web development inquiries:",
-    "repository": "GitHub Repo"
+    "messageUs": "Wallet",
+    "repository": "Github"
   },
   "notifications": {
     "all": "See all notifications",
@@ -482,13 +496,15 @@
     "noReport": "There is no data to display. Report will be available on November 3, 2018.",
     "loading": "Loading",
     "headings": {
+      "address": "Address",
       "email": "Email",
       "name": "Name",
       "firstName": "First Name",
       "lastName": "Last Name",
       "status": "Status",
       "country": "Country",
-      "location": "Location"
+      "location": "Location",
+      "phone": "Phone"
     }
   },
   "user": {

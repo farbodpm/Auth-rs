@@ -1,11 +1,7 @@
 <template>
   <div class="dashboard">
-    <dashboard-charts />
-    <dashboard-info-block />
     <div class="row row-equal">
-      <div class="flex xs12 lg6">
-        <dashboard-tabs @submit="addAddressToMap"/>
-      </div>
+      
       <div class="flex xs12 lg6">
         <dashboard-map ref="dashboardMap"/>
       </div>

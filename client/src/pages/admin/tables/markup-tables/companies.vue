@@ -7,45 +7,15 @@
             <thead>
               <tr>
                 <th>{{ $t('tables.headings.name') }}</th>
-                <th>{{ $t('tables.headings.email') }}</th>
-                <th>{{ $t('tables.headings.country') }}</th>
-                <th>{{ $t('tables.headings.status') }}</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              <tr v-for="user in users" :key="user.id">
-                <td>{{ user.name }}</td>
-                <td>{{ user.email }}</td>
-                <td>{{ user.country }}</td>
-                <td>
-                  <va-badge :color="getStatusColor(user.status)">
-                    {{ user.status }}
-                  </va-badge>
-                </td>
-              </tr>
-            </tbody>
-          </table>                
-        </div>
-      </va-card-content>
-    </va-card>
-  
-    <va-card :title="$t('tables.stripedHoverable')">
-      <va-card-content>
-        <div class="table-wrapper">
-          <table class="va-table va-table--striped va-table--hoverable">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Address</th>
-                <th>Phone</th>
+                <th>{{ $t('tables.headings.address') }}</th>
+                <th>{{ $t('tables.headings.phone') }}</th>
               </tr>
             </thead>
 
             <tbody>
               <tr v-for="company in companies" :key="company.id">
                 <td>{{ company.name }}</td>
-                <td>{{ company.address }}</td>
+                <td>{{ company.location }}</td>
                 <td>{{ company.phone }}</td>
 
               </tr>
@@ -58,7 +28,6 @@
 </template>
 
 <script>
-import data from '@/data/tables/markup-table/data.json'
 import axios from 'axios'
 export default {
   data () {

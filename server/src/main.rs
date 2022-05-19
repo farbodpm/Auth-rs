@@ -5,19 +5,17 @@ use jwt_simple::prelude::*;
 use serde::{Deserialize, Serialize};
 use sqlx::mysql::MySqlPool;
 use sqlx::{MySql, Pool};
-use std::collections::HashMap;
 use std::env;
-use tokio::runtime::Runtime;
-use tokio_postgres::{Error, NoTls};
-type JsonMap = HashMap<String, serde_json::Value>;
+// use tokio::runtime::Runtime;
 
 type GenericError = Box<dyn std::error::Error + Send + Sync>;
 type Result<T> = std::result::Result<T, GenericError>;
 mod login;
 mod signup;
-static INDEX: &[u8] = b"<a href=\"test.html\">test.html</a>";
+mod logout;
+mod wallet;
+mod company;
 static NOTFOUND: &[u8] = b"Some Thing is Wrong";
-static INTERNAL_SERVER_ERROR: &[u8] = b"Internal Server Error";
 #[derive(Serialize, Deserialize)]
 struct User {
     pub id: u64,
@@ -52,15 +50,24 @@ async fn login(
         .body(Body::from(message))
         .unwrap())
 }
-async fn logout(req: Request<Body>) -> Result<Response<Body>> {
-    let (message, status) = ("not impl", 200);
+
+async fn logout(
+    req: Request<Body>,
+    mut pool: sqlx::pool::PoolConnection<sqlx::mysql::MySql>,
+) -> Result<Response<Body>> {
+    let (message, status) = crate::logout::logout(req, pool).await;
 
     Ok(Response::builder()
+        // .header(header::CONTENT_TYPE, "application/json")
+        .header("Access-Control-Allow-Origin", "*")
+        .header("Access-Control-Allow-Methods", "*")
+        .header("Access-Control-Allow-Credentials", "true")
         .header(header::CONTENT_TYPE, "application/json")
         .status(status)
         .body(Body::from(message))
         .unwrap())
 }
+
 async fn get_user(req: Request<Body>) -> Result<Response<Body>> {
     let (message, status) = ("not impl", 200);
 
@@ -89,6 +96,90 @@ async fn signup(
 ) -> Result<Response<Body>> {
     let (message, status) = crate::signup::signup_proccess(req, pool).await;
 
+    Ok(Response::builder()
+        // .header(header::CONTENT_TYPE, "application/json")
+        .header("Access-Control-Allow-Origin", "*")
+        .header("Access-Control-Allow-Methods", "*")
+        .header("Access-Control-Allow-Credentials", "true")
+        .header(header::CONTENT_TYPE, "application/json")
+        .status(status)
+        .body(Body::from(message))
+        .unwrap())
+}
+async fn get_wallet(
+    req: Request<Body>,
+    mut pool: sqlx::pool::PoolConnection<sqlx::mysql::MySql>,
+) -> Result<Response<Body>> {
+    let (parts, _body) = req.into_parts();
+    println!("{:?}",parts.headers["auth"]);
+    let key = HS256Key::from_bytes(&crate::login::KEY);
+    let mut options = VerificationOptions::default();
+    // accept tokens even if they have expired up to 15 minutes after the deadline
+    options.time_tolerance = Some(Duration::from_mins(5));
+    let claims = key.verify_token::<crate::login::MyAdditionalData>(parts.headers.get("auth").unwrap().to_str().unwrap(), Some(options));
+    let (message, status) = match claims {
+        Ok(my_data) =>{
+            crate::wallet::get::handler(my_data.custom.user_id, pool).await
+        } ,
+        Err(e)=> (e.to_string(),500)
+    };
+    
+    Ok(Response::builder()
+        // .header(header::CONTENT_TYPE, "application/json")
+        .header("Access-Control-Allow-Origin", "*")
+        .header("Access-Control-Allow-Methods", "*")
+        .header("Access-Control-Allow-Credentials", "true")
+        .header(header::CONTENT_TYPE, "application/json")
+        .status(status)
+        .body(Body::from(message))
+        .unwrap())
+}
+async fn create_company(
+    req: Request<Body>,
+    mut pool: sqlx::pool::PoolConnection<sqlx::mysql::MySql>,
+) -> Result<Response<Body>> {
+    let (parts, body) = req.into_parts();
+    println!("{:?}",parts.headers["auth"]);
+    let key = HS256Key::from_bytes(&crate::login::KEY);
+    let mut options = VerificationOptions::default();
+    // accept tokens even if they have expired up to 15 minutes after the deadline
+    options.time_tolerance = Some(Duration::from_mins(5));
+    let claims = key.verify_token::<crate::login::MyAdditionalData>(parts.headers.get("auth").unwrap().to_str().unwrap(), Some(options));
+    let (message, status) = match claims {
+        Ok(my_data) =>{
+            crate::company::create::handler(body, pool).await
+        } ,
+        Err(e)=> (e.to_string(),500)
+    };  
+    Ok(Response::builder()
+        // .header(header::CONTENT_TYPE, "application/json")
+        .header("Access-Control-Allow-Origin", "*")
+        .header("Access-Control-Allow-Methods", "*")
+        .header("Access-Control-Allow-Credentials", "true")
+        .header(header::CONTENT_TYPE, "application/json")
+        .status(status)
+        .body(Body::from(message))
+        .unwrap())
+}
+async fn get_companis(
+    req: Request<Body>,
+    mut pool: sqlx::pool::PoolConnection<sqlx::mysql::MySql>,
+) -> Result<Response<Body>> {
+    let (parts, body) = req.into_parts();
+    println!("get comp{:?}",parts.headers["auth"]);
+    let key = HS256Key::from_bytes(&crate::login::KEY);
+    let mut options = VerificationOptions::default();
+    // accept tokens even if they have expired up to 15 minutes after the deadline
+    options.time_tolerance = Some(Duration::from_mins(5));
+    let claims = key.verify_token::<crate::login::MyAdditionalData>(parts.headers.get("auth").unwrap().to_str().unwrap(), Some(options));
+    let (message, status) = match claims {
+        Ok(my_data) =>{
+            crate::company::list::handler(body, pool).await
+        } ,
+        Err(e)=> {
+            println!("Error jwt is {:}",e);
+            (e.to_string(),500)}
+    };
     Ok(Response::builder()
         // .header(header::CONTENT_TYPE, "application/json")
         .header("Access-Control-Allow-Origin", "*")
@@ -132,8 +223,47 @@ async fn response_examples(
                 .body(NOTFOUND.into())
                 .unwrap()),
         },
-        (&Method::POST, "/api/logout") => logout(req).await,
+        (&Method::POST, "/api/logout") => match pool.acquire().await {
+            Ok(db_con) => logout(req, db_con).await,
+            _ => Ok(Response::builder()
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Methods", "*")
+                .status(StatusCode::from_u16(500).unwrap())
+                .body(NOTFOUND.into())
+                .unwrap()),
+        },
         (&Method::POST, "/api/get/user") => get_user(req).await,
+        (&Method::POST, "/api/company/create") => match pool.acquire().await {
+            Ok(db_con) => create_company(req, db_con).await,
+            _ => Ok(Response::builder()
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Methods", "*")
+                .status(StatusCode::from_u16(500).unwrap())
+                .body(NOTFOUND.into())
+                .unwrap()),
+        },
+        (&Method::POST, "/api/company/edit") => get_user(req).await,
+        (&Method::POST, "/api/company/list") => match pool.acquire().await {
+            Ok(db_con) => get_companis(req, db_con).await,
+            _ => Ok(Response::builder()
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Methods", "*")
+                .status(StatusCode::from_u16(500).unwrap())
+                .body(NOTFOUND.into())
+                .unwrap()),
+        },
+        (&Method::POST, "/api/company/assign") => get_user(req).await,
+        (&Method::POST, "/api/wallet/get") => 
+            match pool.acquire().await {
+            Ok(db_con) => get_wallet(req, db_con).await,
+            _ => Ok(Response::builder()
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Methods", "*")
+                .status(StatusCode::from_u16(500).unwrap())
+                .body(NOTFOUND.into())
+                .unwrap()),
+        },
+
         _ => {
             // Return 404 not found response.
             Ok(Response::builder()

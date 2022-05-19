@@ -13,7 +13,7 @@ export default {
     },
     {
       name: 'statistics',
-      displayName: 'menu.statistics',
+      displayName: 'menu.finance',
       meta: {
         icon: 'vuestic-iconset-statistics',
       },
@@ -48,15 +48,32 @@ export default {
       ],
     },
     {
-      name: 'tables',
-      displayName: 'menu.tables',
+      name: 'reports',
+      displayName: 'menu.reports',
       meta: {
         icon: 'vuestic-iconset-tables',
       },
       children: [
         {
-          name: 'markup',
-          displayName: 'menu.markupTables',
+          name: 'companies',
+          displayName: 'menu.companies',
+        },
+        // {
+        //   name: 'data',
+        //   displayName: 'menu.dataTables',
+        // },
+      ],
+    },
+    {
+      name: 'company',
+      displayName: 'menu.company',
+      meta: {
+        icon: 'vuestic-iconset-tables',
+      },
+      children: [
+        {
+          name: 'addCompany',
+          displayName: 'menu.addCompany',
         },
         // {
         //   name: 'data',

@@ -115,14 +115,14 @@ const routes: Array<RouteRecordRaw> = [
         ],
       },
       {
-        name: 'tables',
-        path: 'tables',
+        name: 'reports',
+        path: 'reports',
         component: RouteViewComponent,
         children: [
           {
-            name: 'markup',
-            path: 'markup',
-            component: () => import('@/pages/admin/tables/markup-tables/MarkupTables.vue'),
+            name: 'companies',
+            path: 'companies',
+            component: () => import('@/pages/admin/tables/markup-tables/companies.vue'),
             meta: {
               wikiLink: 'https://github.com/epicmaxco/vuestic-admin/wiki/Tables',
             },
@@ -134,6 +134,18 @@ const routes: Array<RouteRecordRaw> = [
             meta: {
               wikiLink: 'https://github.com/epicmaxco/vuestic-admin/wiki/Tables',
             },
+          },
+        ],
+      },
+      {
+        name: 'company',
+        path: 'company',
+        component: RouteViewComponent,
+        children: [
+          {
+            name: 'addCompany',
+            path: 'addCompany',
+            component: () => import('@/pages/admin/forms/addCompany/addCompany.vue'),
           },
         ],
       },

@@ -17,22 +17,7 @@
       <template v-slot:center>
         <span class="app-navbar__text">
           {{$t('navbar.messageUs')}}&nbsp;
-          <a
-            href="mailto:hello@epicmax.co"
-            target="_blank"
-            :style="{color: colors.primary}"
-          >
-            hello@epicmax.co
-          </a>
-          <va-button
-            href="https://github.com/epicmaxco/vuestic-admin"
-            color="#000000"
-            class="app-navbar__github-button"
-            icon="github"
-            target="_blank"
-          >
-            {{$t('navbar.repository')}}
-          </va-button>
+          {{money}}
         </span>
       </template>
       <template #right>
@@ -52,9 +37,27 @@ import { computed } from 'vue'
 import VuesticLogo from '@/components/vuestic-logo'
 import VaIconMenuCollapsed from '@/components/icons/VaIconMenuCollapsed'
 import AppNavbarActions from './components/AppNavbarActions'
-
+import axios from 'axios';
 export default {
   components: { VuesticLogo, AppNavbarActions, VaIconMenuCollapsed },
+  data () {
+    return {
+      money: ''
+    }
+  },
+  mounted () {
+    const BASE_URL = process.env.VUE_APP_APP_BASE_URL;
+      console.log(BASE_URL);
+      axios.post(BASE_URL + "/api/wallet/get",
+      { hello: 'world' }, {
+  headers: {
+    // 'application/json' is the modern content-type for JSON, but some
+    // older servers may use 'text/json'.
+    // See: http://bit.ly/text-json
+    'auth': localStorage.getItem('token')
+  }
+}).then((response) => {this.money = response.data.money;});
+  },
   setup() {
     const { getColors } = useColors()
     const colors = computed(() => getColors() )
@@ -64,7 +67,7 @@ export default {
       get: () => store.state.isSidebarMinimized,
       set: (value) => store.commit('updateSidebarCollapsedState', value)
     })
-
+    
     const userName = computed(() => store.state.userName)
     return {
       colors,

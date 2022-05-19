@@ -2,11 +2,10 @@
   <form @submit.prevent="onsubmit">
     <va-input
       class="mb-3"
-      v-model="email"
-      type="email"
-      :label="$t('auth.email')"
-      :error="!!emailErrors.length"
-      :error-messages="emailErrors"
+      v-model="username"
+      :label="$t('auth.username')"
+      :error="!!usernameErrors.length"
+      :error-messages="usernameErrors"
     />
 
     <va-input
@@ -36,32 +35,34 @@ export default {
   name: 'login',
   data () {
     return {
-      email: '',
+      username: '',
       password: '',
       keepLoggedIn: false,
-      emailErrors: [],
+      usernameErrors: [],
       passwordErrors: [],
     }
   },
   computed: {
     formReady () {
-      return !this.emailErrors.length && !this.passwordErrors.length
+      return !this.usernameErrors.length && !this.passwordErrors.length
     },
   },
   methods: {
     onsubmit () {
-      
-      this.emailErrors = this.email ? [] : ['Email is required']
+      this.usernameErrors = this.username ? [] : ['username is required']
       this.passwordErrors = this.password ? [] : ['Password is required']
-      axios.post("http://localhost:8000/api/login",
+      const BASE_URL = process.env.VUE_APP_APP_BASE_URL;
+      console.log(BASE_URL);
+      axios.post(BASE_URL + "/api/login",
       {
         "login_type": "Username",
-        "login_input": this.email,
+        "login_input": this.username,
         "login_credentials": this.password,
       }).then((data) => {
-        console.log(data);
-        if (data.data == "Now you are logged in") {
+        if (data.data.message == "Now you are logged in") {
           this.$router.push({ name:"dashboard"});
+          console.log(data.data.token)
+          localStorage.setItem("token",data.data.token);
         }
         else{
         this.passwordErrors.push(data.data);

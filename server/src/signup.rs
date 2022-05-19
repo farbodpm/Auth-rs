@@ -7,10 +7,7 @@ use std::env;
 use sqlx::{MySql, Pool};
 use std::collections::HashMap;
 use tokio_postgres::{Error, NoTls};
-type JsonMap = HashMap<String, serde_json::Value>;
 use crate::login::{validate_password,validate_username};
-type GenericError = Box<dyn std::error::Error + Send + Sync>;
-type Result<T> = std::result::Result<T, GenericError>;
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct SignupRequest {
